@@ -125,7 +125,7 @@ export default function Companies() {
                   <>
                     <div className="grow">
                       <div className="row-title">{c.name}</div>
-                      <div className="muted small">${Number(c.hourlyWage).toFixed(2)} / hour</div>
+                      <div className="muted small">kr {Number(c.hourlyWage).toFixed(2)} / hour</div>
                     </div>
                     <button className="link-btn" onClick={() => beginEdit(c)}>Edit</button>
                     <button className="link-btn danger" onClick={() => remove(c.id)}>Delete</button>

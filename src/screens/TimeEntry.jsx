@@ -98,7 +98,7 @@ export default function TimeEntry() {
           <select value={companyId} onChange={(e) => setCompanyId(e.target.value)}>
             {companies.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name} — ${Number(c.hourlyWage).toFixed(2)}/hr
+                {c.name} — kr {Number(c.hourlyWage).toFixed(2)}/hr
               </option>
             ))}
           </select>
@@ -137,7 +137,7 @@ export default function TimeEntry() {
           </div>
           <div>
             <span className="muted small">Pay</span>
-            <div className="pill-value">${pay.toFixed(2)}</div>
+            <div className="pill-value">kr {pay.toFixed(2)}</div>
           </div>
         </div>
 

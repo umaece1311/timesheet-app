@@ -128,7 +128,7 @@ export default function Dashboard() {
         </div>
         <div className="kpi-card">
           <span className="muted small">Total pay</span>
-          <div className="kpi-value">${totals.totalPay.toFixed(2)}</div>
+          <div className="kpi-value">kr {totals.totalPay.toFixed(2)}</div>
         </div>
         <div className="kpi-card">
           <span className="muted small">Entries</span>
@@ -146,7 +146,7 @@ export default function Dashboard() {
                   <div className="row-title">{name}</div>
                   <div className="muted small">{t.hours.toFixed(2)} hours</div>
                 </div>
-                <div className="row-amount">${t.pay.toFixed(2)}</div>
+                <div className="row-amount">kr {t.pay.toFixed(2)}</div>
               </li>
             ))}
           </ul>
@@ -187,7 +187,7 @@ export default function Dashboard() {
                     <td>{e.entryTime}</td>
                     <td>{e.exitTime}</td>
                     <td className="num">{Number(e.hours).toFixed(2)}</td>
-                    <td className="num">${Number(e.pay).toFixed(2)}</td>
+                    <td className="num">kr {Number(e.pay).toFixed(2)}</td>
                     <td className="num">
                       <button className="link-btn danger" onClick={() => remove(e.id)}>Delete</button>
                     </td>
@@ -198,7 +198,7 @@ export default function Dashboard() {
                 <tr>
                   <td colSpan={4} className="muted">Total</td>
                   <td className="num"><strong>{totals.totalHours.toFixed(2)}</strong></td>
-                  <td className="num"><strong>${totals.totalPay.toFixed(2)}</strong></td>
+                  <td className="num"><strong>kr {totals.totalPay.toFixed(2)}</strong></td>
                   <td></td>
                 </tr>
               </tfoot>
