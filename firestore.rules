@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Admin is identified by Gmail address. Keep this in sync with ADMIN_EMAIL in src/lib/firebase.js.
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == 'umaece1311@gmail.com';
+    }
+
+    function isApproved(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid))
+        && get(/databases/$(database)/documents/users/$(uid)).data.status == 'approved';
+    }
+
+    match /users/{userId} {
+      // Read your own profile; admin can read everyone (needed for Access Manager).
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+
+      // First sign-in: create your own profile.
+      // Admin email is auto-approved as 'admin'; everyone else starts as a pending 'user'.
+      allow create: if isSignedIn() && request.auth.uid == userId && (
+        (request.auth.token.email == 'umaece1311@gmail.com'
+          && request.resource.data.status == 'approved'
+          && request.resource.data.role == 'admin')
+        || (request.auth.token.email != 'umaece1311@gmail.com'
+          && request.resource.data.status == 'pending'
+          && request.resource.data.role == 'user')
+      );
+
+      // Updates: admin can change anything; a normal user can refresh their own profile
+      // fields (name, photo, lastLoginAt) but CANNOT change their own status or role.
+      allow update: if isAdmin() || (
+        isSignedIn() && request.auth.uid == userId
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.role == resource.data.role
+      );
+
+      // Only admin can delete user docs.
+      allow delete: if isAdmin();
+
+      // Subcollections: only the approved owner can read/write their own data.
+      match /companies/{cid} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId && isApproved(userId);
+      }
+      match /entries/{eid} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId && isApproved(userId);
+      }
+    }
+  }
+}
