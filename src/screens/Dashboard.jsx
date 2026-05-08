@@ -80,6 +80,55 @@ export default function Dashboard() {
     await reload();
   }
 
+  const exportLabel = `${monthNames[month - 1]}-${year}${companyFilter !== 'all' ? `-${companyFilter}` : ''}`;
+  const exportFileBase = `timesheet-${exportLabel.replace(/\s+/g, '_')}`;
+
+  function exportCsv() {
+    const esc = (v) => {
+      const s = String(v ?? '');
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const header = ['Company', 'Date', 'Entry', 'Exit', 'Hours', 'Pay (NOK)'];
+    const rows = filteredEntries.map((e) => [
+      e.companyName, e.date, e.entryTime, e.exitTime,
+      Number(e.hours).toFixed(2), Number(e.pay).toFixed(2)
+    ]);
+    rows.push(['', '', '', 'Total', totals.totalHours.toFixed(2), totals.totalPay.toFixed(2)]);
+    const csv = [header, ...rows].map((r) => r.map(esc).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${exportFileBase}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function exportPdf() {
+    const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable')
+    ]);
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text('Timesheet', 14, 18);
+    doc.setFontSize(11);
+    doc.text(exportLabel, 14, 26);
+    autoTable(doc, {
+      startY: 32,
+      head: [['Company', 'Date', 'Entry', 'Exit', 'Hours', 'Pay (kr)']],
+      body: filteredEntries.map((e) => [
+        e.companyName, e.date, e.entryTime, e.exitTime,
+        Number(e.hours).toFixed(2), Number(e.pay).toFixed(2)
+      ]),
+      foot: [['', '', '', 'Total', totals.totalHours.toFixed(2), totals.totalPay.toFixed(2)]],
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [37, 99, 235] },
+      footStyles: { fillColor: [240, 240, 240], textColor: 20, fontStyle: 'bold' }
+    });
+    doc.save(`${exportFileBase}.pdf`);
+  }
+
   const years = [];
   for (let y = now.getFullYear() - 3; y <= now.getFullYear() + 1; y++) years.push(y);
 
@@ -154,10 +203,18 @@ export default function Dashboard() {
       )}
 
       <div className="card">
-        <h3 className="card-title">
-          Entries
-          {companyFilter !== 'all' && <span className="muted small"> — {companyFilter}</span>}
-        </h3>
+        <div className="row-between" style={{ alignItems: 'center', marginBottom: 8 }}>
+          <h3 className="card-title" style={{ margin: 0 }}>
+            Entries
+            {companyFilter !== 'all' && <span className="muted small"> — {companyFilter}</span>}
+          </h3>
+          {filteredEntries.length > 0 && (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="link-btn" onClick={exportCsv}>Export CSV</button>
+              <button className="link-btn" onClick={exportPdf}>Export PDF</button>
+            </div>
+          )}
+        </div>
         {loading ? (
           <p className="muted center">Loading…</p>
         ) : filteredEntries.length === 0 ? (
