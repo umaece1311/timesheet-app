@@ -23,6 +23,7 @@ export default function TimeEntry() {
   const [date, setDate] = useState(todayISO());
   const [entryTime, setEntryTime] = useState('09:00');
   const [exitTime, setExitTime] = useState('17:00');
+  const [lunchMinutes, setLunchMinutes] = useState(0);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
 
@@ -36,7 +37,11 @@ export default function TimeEntry() {
   }, [user]);
 
   const selected = companies.find((c) => c.id === companyId);
-  const hours = useMemo(() => hoursBetween(entryTime, exitTime), [entryTime, exitTime]);
+  const grossHours = useMemo(() => hoursBetween(entryTime, exitTime), [entryTime, exitTime]);
+  const hours = useMemo(() => {
+    const lunch = Math.max(0, Math.min(30, Number(lunchMinutes) || 0)) / 60;
+    return Math.max(0, Math.round((grossHours - lunch) * 100) / 100);
+  }, [grossHours, lunchMinutes]);
   const pay = useMemo(() => computePay(hours, selected?.hourlyWage), [hours, selected]);
 
   async function handleSubmit(e) {
@@ -55,6 +60,7 @@ export default function TimeEntry() {
         date,
         entryTime,
         exitTime,
+        lunchMinutes: Number(lunchMinutes) || 0,
         hours,
         pay
       });
@@ -62,6 +68,7 @@ export default function TimeEntry() {
       // Reset times to defaults but keep the date for repeat logging.
       setEntryTime('09:00');
       setExitTime('17:00');
+      setLunchMinutes(0);
     } catch (err) {
       setMsg({ type: 'error', text: err.message || 'Could not save entry.' });
     } finally {
@@ -128,6 +135,24 @@ export default function TimeEntry() {
               required
             />
           </div>
+        </div>
+
+        <div className="field">
+          <label>Lunch break (minutes, max 30)</label>
+          <input
+            type="number"
+            min="0"
+            max="30"
+            step="5"
+            value={lunchMinutes}
+            onChange={(e) => {
+              const raw = e.target.value;
+              if (raw === '') { setLunchMinutes(0); return; }
+              const n = Number(raw);
+              if (Number.isNaN(n)) return;
+              setLunchMinutes(Math.max(0, Math.min(30, n)));
+            }}
+          />
         </div>
 
         <div className="summary-pill">
